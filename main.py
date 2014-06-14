@@ -4,7 +4,7 @@ import urllib , urllib2 , cookielib
 from urllib2 import urlopen, URLError, HTTPError
 from urllib import urlencode
 from bs4 import BeautifulSoup
-import time
+import time , sys
 
 import ocr
 import handler
@@ -18,7 +18,7 @@ def login():
 		login_url = 'https://isdna1.yzu.edu.tw/CnStdSel/Index.aspx'
 
 		try:
-			login_info = opener.open(login_url).read()
+			login_info = urllib2.urlopen(login_url).read()
 			info = BeautifulSoup(str(login_info))
 		except:
 			print 'server error.'
@@ -75,6 +75,9 @@ def getClass():
 			time.sleep(2.2)
 
 if __name__ == '__main__':
+	reload(sys)
+	sys.setdefaultencoding('utf-8')
+
 	while True:
 		login()
 		if getClass() == True:
