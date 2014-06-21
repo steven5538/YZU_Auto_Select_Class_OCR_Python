@@ -1,10 +1,10 @@
 # -*- coding: utf8 -*-
 
-from PIL import Image
+from PIL import Image , ImageEnhance
 import urllib , urllib2 , cookielib
-import sys
 from urllib2 import urlopen, URLError, HTTPError
-import handler
+import cv2 , tesseract
+import numpy as np
 
 
 def downloadImage(opener):
@@ -20,71 +20,32 @@ def downloadImage(opener):
 	except URLError , e:
 		print "URLError: " , e.reason
 
-def numpoint(im):
-	width , height = im.size
-	data = list(im.getdata())
-	mumpoint = 0
+def imageOpening():
+	img = cv2.imread('tmp.png' , 0)
+	kernel = np.ones((2 , 2) , np.uint8)
+	opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
-	for x in range(width):
-		for y in range(height):
-			if data[y * width + x] != 255:
-				mumpoint += 1
-
-	return mumpoint
-
-def pointmidu(im):
-    width , height = im.size
-
-    for y in range(0 , height , 5):
-        for x in range(0 , width , 5):
-            box = (x , y , x + 5 , y + 5)
-            im1 = im.crop(box)
-            a = numpoint(im1)
-
-            if a < 11:
-                for i in range(x , x + 5):
-                    for j in range(y , y + 5):
-                        im.putpixel((i , j) , 255)
-    return im
+	cv2.imwrite('tmp_.png' , opening)
 
 def imageFilter(im):
-	im = im.convert('RGBA')
-	im = im.rotate(1)
-	im = im.crop((1 , 4 , im.size[0]-1 , im.size[1]-1))
+	enhancer = ImageEnhance.Contrast(im)
+	im = enhancer.enhance(3.0)
+	enhancer = ImageEnhance.Brightness(im)
+	im = enhancer.enhance(10.0)
+
 	pix = im.load()
+	w , h = im.size
 
-	width , height = im.size
-
-	for y in xrange(height):
-		for x in xrange(width):  
-			if pix[x, y][1] != 0 and (pix[(x + 1) % width , y][1] != 0 and pix[x , (y + 1) % height][1] != 0) :
-				pix[x, y] = (255, 255, 255, 255)
+	for x in xrange(w):
+		for y in xrange(h):
+			if pix[x , y][2] == 255 and pix[x , y][3] == 255 and pix[x , y][1] != 255:
+				pix[x , y] = (0 , 0 , 0 , 255)
 			else:
-				pix[x, y] = (0, 0, 0, 255)
+				pix[x , y] = (255 , 255 , 255 , 255)
 
-	
-	dx=[-1 , -1 , -1 , 0 , 0 , 0 , 1 , 1 , 1]
-	dy=[-1 , 0 , 1 , -1 , 0 , 1 , -1 , 0 , 1]
-
-	for y in xrange(1 , height):
-		for x in xrange(1 , width):  
-			num = 0
-
-			for i in range(len(dx)):
-				if x > 0 and x < width - 1 and y > 0 and y < height - 1:
-					if(pix[(x + dx[i]) , (y + dy[i])][0] == 0):
-						num += 1
-
-			if pix[x,y] == (255,255,255) and num >= 3:
-				pix[x, y] = (0, 0, 0, 0)
-
-	im = pointmidu(im)
-
-	im.save('tmp_.png')
+	im.save('tmp.png')
 
 def OCR():
-	import tesseract
-
 	api = tesseract.TessBaseAPI()
 	api.Init('.' , 'eng' , tesseract.OEM_DEFAULT)
 	api.SetVariable('tessedit_char_whitelist' , '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')
@@ -109,6 +70,7 @@ def get(opener):
 		downloadImage(opener)
 		im = Image.open('tmp.png')
 		imageFilter(im)
+		imageOpening()
 		captha = OCR()
 
 		if checkCaptha(captha) == True:

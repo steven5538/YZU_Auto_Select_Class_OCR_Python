@@ -1,11 +1,13 @@
 # YZU_Auto_Select_Class Python version with OCR
 
-this is just for YZU student.
+This is just for YZU student.
+The next version will be released in the next time to choose the class.
 
 ## Install
 
 1. PIL
 2. python-tesseract
+3. OpenCV-Python
 
 must to be installed.
 
